@@ -1,25 +1,21 @@
 import pandas as pd
 import requests 
 import json
-import sqlalchemy as sa
+import time
+from datetime import datetime, timedelta
 from configparser import ConfigParser
+import sqlalchemy as sa
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from datetime import datetime, timedelta
 
-def carga_credenciales(ti):
-    parser = ConfigParser()
-    parser.read('credenciales/config.ini')
-    config = parser['redshift']
-    ti.xcom_push(key= 'credenciales', value= config)
-
-def conexion_api(ti):
+def conexion_api():
     
-    config = ti.xcom_pull(key= 'credenciales', task_id = 'credenciales')
+    parser = ConfigParser()
+    parser.read('credenciales/credenciales.ini')
+    config = parser['redshift']
     
     def bcra(codigo, nombre_variable, credenciales):
         headers = dict(Authorization = credenciales['api_token'])
-        # Pedimos que traiga la data y la limpie
         api = 'https://api.estadisticasbcra.com/{}'.format(codigo)
         data = requests.get(api, headers = headers).json()
         data = pd.DataFrame(data)
@@ -49,60 +45,100 @@ def conexion_api(ti):
     data.dropna(inplace=True)
     
     data.to_csv('data/datos_bcra.csv', index= False)
+    
 
-def conn_redshift(ti):
-    
-    data = pd.read_csv('data/datos_bcra.csv')
-    
-    config = ti.xcom_pull(key= 'credenciales', task_id = 'credenciales')
-    
+def filtrar_registros():
+
+    parser = ConfigParser()
+    parser.read('credenciales/credenciales.ini')
+    config = parser['redshift']
     host = config['host']
     port = config['port']
     dbname = config['dbname']
     username = config['username']
     pwd = config['pwd']
-
-    # Contruye la cadena de conexión
-    conn_string =f'postgresql://{username}:{pwd}@{host}:{port}/{dbname}?sslmode=require'
     
+    conn_string =f'postgresql://{username}:{pwd}@{host}:{port}/{dbname}?sslmode=require'
+
     engine = sa.create_engine(conn_string)
+    
     conn = engine.connect()
     
     ultima_fecha = pd.read_sql('select max(fecha) from rodriguez_mauro11_coderhouse.bcra', conn)
     
+    print('ultima fecha cargada: {}'.format(ultima_fecha['max'].iloc[0]))
+    
     if ultima_fecha['max'].iloc[0] == None:
+        print('No hay datos en redshift. Hay que insertar todos los registros de la API.')
+        conn.close()
+    else:
+        data = pd.read_csv('data/datos_bcra.csv')
+        ultima_fecha = str(ultima_fecha['max'][0])
+        data = data[data['fecha'] > ultima_fecha]
+
+        if len(data) != 0:
+            
+            data.to_csv('data/datos_bcra.csv', index = False)
+            
+            print('Los registros nuevos fueron filtrados.')
+          
+            conn.close()
+        else:
+            print('No hay registros nuevos para cargar.')
+            data = pd.DataFrame()
+            data.to_csv('data/datos_bcra.csv', index = False)
+            conn.close()
+    
+    
+def conn_redshift():
+    
+    try:
+
+        data = pd.read_csv('data/datos_bcra.csv')
+    
+        parser = ConfigParser()
+        parser.read('credenciales/credenciales.ini')
+        config = parser['redshift']
+        host = config['host']
+        port = config['port']
+        dbname = config['dbname']
+        username = config['username']
+        pwd = config['pwd']
+    
+        conn_string =f'postgresql://{username}:{pwd}@{host}:{port}/{dbname}?sslmode=require'
+
+        engine = sa.create_engine(conn_string)
+    
+        conn = engine.connect()
+
         data.to_sql(name= 'bcra', con = conn, if_exists= 'append', method= 'multi', 
            chunksize= 1000, index= False)
-        con.close()
-    else:
-        data = data[data['fecha'] > ultima_fecha]
-        if len(data) != 0:
-            data.to_sql(name= 'bcra', con = conn, if_exists= 'append', method= 'multi', 
-               chunksize= 1000, index= False)
-            con.close()
-        else:
-            print('No hay registros nuevos para cargar')
-            con.close()
+
+        print('registros nuevos cargados')
+
+        conn.close()
+       
+    except:
+        print('No se cargaron registros')
+        
             
-default_args = {'owner': 'Mauro',
+default_args = {'owner': 'Mauro Rodríguez',
                 'depends_on_past': True,
-                'retries': 3,
+                'retries': 0,
                 'retry_delay':timedelta(minutes=1)}
     
 with DAG(dag_id = 'api_bcra',
          default_args = default_args,
-         description = 'Carga datos en redshift desde la API del Banco Central',
-         start_date = datetime(2024,2,22),
-         schedule_interval = '@daily') as dag:
+         description = 'Carga datos en redshift desde la API del Banco Central de la República Argentina',
+         start_date = datetime(2024,2,23),
+         schedule_interval = '0 23 * * *',
+         catchup = False) as dag:
     
-    task1 = PythonOperator(task_id = 'credenciales',
-                           python_callable = carga_credenciales)
-    task2 = PythonOperator(task_id = 'api_conexion',
+    task1 = PythonOperator(task_id = 'descarga_info_api',
                            python_callable = conexion_api)
+    task2 = PythonOperator(task_id = 'filtrar_registros_nvos',
+                           python_callable = filtrar_registros)
     task3 = PythonOperator(task_id = 'carga_sql',
                            python_callable = conn_redshift)
     
-task1 >> task2
-task1 >> task3
-task2 >> task3
-    
+task1 >> task2 >> task3    

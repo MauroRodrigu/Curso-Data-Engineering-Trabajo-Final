@@ -1,5 +1,4 @@
-DROP TABLE IF EXISTS rodriguez_mauro11_coderhouse.bcra;
-        CREATE TABLE rodriguez_mauro11_coderhouse.bcra (
+CREATE TABLE IF NOT EXISTS rodriguez_mauro11_coderhouse.bcra (
           fecha DATE,
           dolar_oficial FLOAT,
           dolar_paralelo FLOAT,
