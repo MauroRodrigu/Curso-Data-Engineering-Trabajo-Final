@@ -20,27 +20,29 @@ Concretamente, las tareas que realiza el DAG son las siguientes:
 
 - Almacena los nuevos datos, si los hay, en una tabla de una base de datos Amazon Redshift.
 
-Si bien es un ejemplo simple del funcionamiento de un proceso de ETL (extract, transform, load), las facilidades que brinda Apache-Airflow nos permiten la posibilidad de ir escalando y complejizando facilmente las tareas de forma horizontal. 
+Si bien es un ejemplo simple del funcionamiento de un proceso de ETL (extract, transform, load), las facilidades que brinda Apache-Airflow nos permiten ir escalando y complejizando facilmente las tareas de forma horizontal. 
 
 ## Archivos y carpetas necesarios para correr Airflow en Docker.
 
-Para correr nuestro DAG en Airflow, utilizaremos un archivo .yaml de Docker Compose, el cual nos permite correr varios contenedores con múltiples servicios en simultáneo y de forma articulada. Para correr estos contenedores, necesitamos alojar en una carpeta de nuestra computadora local los siguientes archivos y crear las carpetas que se mencionan a continuación:
+Para correr nuestro DAG en Airflow, utilizaremos un archivo .yaml de Docker Compose, el cual nos permite correr varios contenedores con múltiples servicios en simultáneo y de forma articulada. Para correr estos contenedores, necesitamos alojar en una carpeta de nuestra computadora local el archivo .yaml:
 
 - Archivo docker-compose.yaml (descargarlo de este repositorio)
 
-- Carpeta dags/
+Y crear en el mismo directorio las siguientes carpetas:
 
-- Carpeta logs/
+- /dags
 
-- Carpeta plugins/
+- /logs
 
-- Carpeta data/
+- /plugins
 
-- Carpeta credenciales/
+- /data
+
+- /credenciales
 
 Dentro de la **carpeta dags** debe almacenarse el script de Python **dag_bcra.py**, el cual debe ser descargardo de este repositorio.
 
-En segundo lugar, debemos descargar y llenar el archivo **credenciales.ini**. Este archivo cuenta con la estructura necesaria para almacenar las credenciales, tanto de nuestra base de datos y el token de la API. Una vez que completamos los datos en este archivo, debemos alojarlo en la carpeta carpeta **credenciales**, previamente creada.
+Por último, debemos descargar y llenar el archivo **credenciales.ini**. Este archivo cuenta con la estructura necesaria para almacenar las credenciales, tanto de nuestra base de datos como del token de la API. Una vez que completamos los datos en este archivo, debemos alojarlo en la carpeta carpeta **credenciales**, previamente creada.
 
 ## Uso de credenciales.
 
