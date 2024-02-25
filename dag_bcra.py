@@ -46,6 +46,7 @@ def conexion_api():
     
     data.to_csv('data/datos_bcra.csv', index= False)
     
+    print('La conexión a la API fue exitosa')
 
 def filtrar_registros():
 
@@ -66,13 +67,17 @@ def filtrar_registros():
     
     ultima_fecha = pd.read_sql('select max(fecha) from rodriguez_mauro11_coderhouse.bcra', conn)
     
-    print('ultima fecha cargada: {}'.format(ultima_fecha['max'].iloc[0]))
+    data = pd.read_csv('data/datos_bcra.csv')
+    
+    print('ultima carga: {}'.format(ultima_fecha['max'].iloc[0]))
     
     if ultima_fecha['max'].iloc[0] == None:
-        print('No hay datos en redshift. Hay que insertar todos los registros de la API.')
+        print("No hay datos en redshift. Se insertarán los {} registros existentes de la API".format(len(data)))
+        
         conn.close()
+
     else:
-        data = pd.read_csv('data/datos_bcra.csv')
+        
         ultima_fecha = str(ultima_fecha['max'][0])
         data = data[data['fecha'] > ultima_fecha]
 
@@ -80,11 +85,11 @@ def filtrar_registros():
             
             data.to_csv('data/datos_bcra.csv', index = False)
             
-            print('Los registros nuevos fueron filtrados.')
+            print("Existen {} registros nuevos que serán cargardos en redshift".format(len(data)))
           
             conn.close()
         else:
-            print('No hay registros nuevos para cargar.')
+            print('No hay registros nuevos para cargar en redshift.')
             data = pd.DataFrame()
             data.to_csv('data/datos_bcra.csv', index = False)
             conn.close()
@@ -114,12 +119,12 @@ def conn_redshift():
         data.to_sql(name= 'bcra', con = conn, if_exists= 'append', method= 'multi', 
            chunksize= 1000, index= False)
 
-        print('registros nuevos cargados')
+        print('Fueron cargados {} registros en Amazon Redsfhit'.format(len(data)))
 
         conn.close()
        
     except:
-        print('No se cargaron registros')
+        print('No hay registros nuevos para cargar')
         
             
 default_args = {'owner': 'Mauro Rodríguez',
@@ -130,9 +135,9 @@ default_args = {'owner': 'Mauro Rodríguez',
 with DAG(dag_id = 'api_bcra',
          default_args = default_args,
          description = 'Carga datos en redshift desde la API del Banco Central de la República Argentina',
-         start_date = datetime(2024,2,23),
-         schedule_interval = '0 23 * * *',
-         catchup = False) as dag:
+         start_date = datetime(2024,2,24),
+         schedule_interval = '@daily',
+         catchup = True) as dag:
     
     task1 = PythonOperator(task_id = 'descarga_info_api',
                            python_callable = conexion_api)
