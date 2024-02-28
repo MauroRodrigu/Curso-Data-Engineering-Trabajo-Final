@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS rodriguez_mauro11_coderhouse.bcra (
+CREATE TABLE IF NOT EXISTS [schema].bcra (
           fecha DATE,
           dolar_oficial FLOAT,
           dolar_paralelo FLOAT,
