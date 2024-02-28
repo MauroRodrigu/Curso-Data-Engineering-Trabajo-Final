@@ -7,6 +7,8 @@ from configparser import ConfigParser
 import sqlalchemy as sa
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from email.mime.text import MIMEText
+import smtplib
 
 def conexion_api():
     
@@ -85,7 +87,7 @@ def filtrar_registros():
             
             data.to_csv('data/datos_bcra.csv', index = False)
             
-            print("Existen {} registros nuevos que serán cargardos en redshift".format(len(data)))
+            print("Existen {} registro/s nuevo/s que será/n cargardo/s en redshift".format(len(data)))
           
             conn.close()
         else:
@@ -119,14 +121,30 @@ def conn_redshift():
         data.to_sql(name= 'bcra', con = conn, if_exists= 'append', method= 'multi', 
            chunksize= 1000, index= False)
 
-        print('Fueron cargados {} registros en Amazon Redsfhit'.format(len(data)))
+        print('Fueron cargados {} registro/s en Amazon Redsfhit'.format(len(data)))
 
         conn.close()
        
     except:
         print('No hay registros nuevos para cargar')
         
-            
+def enviar_email():
+    parser = ConfigParser()
+    parser.read('credenciales/credenciales.ini')
+    config = parser['e-mail']
+    sender = config['sender']
+    recipients = config['recipients']
+    password = config['password']
+    
+    msg = MIMEText('texto')
+    msg['Subject'] = config['subject']
+    msg['From'] = config['from']
+    msg['To'] = ', '.join(config['recipients'])
+    with smtplib.SMTP_SSL('smtp.gmail.com', 456) as smtp_server:
+        smtp_server.login(sender, password)
+        smtp_server.sendmail(sender, recipients, msg.as_string())
+    print('Mensaje enviado')
+    
 default_args = {'owner': 'Mauro Rodríguez',
                 'depends_on_past': True,
                 'retries': 0,
@@ -145,5 +163,7 @@ with DAG(dag_id = 'api_bcra',
                            python_callable = filtrar_registros)
     task3 = PythonOperator(task_id = 'carga_sql',
                            python_callable = conn_redshift)
+    task4 = PythonOperator(task_id = 'enviar e-mail',
+                          python_callable = enviar_email)
     
-task1 >> task2 >> task3    
+task1 >> task2 >> task3 >> task4    
