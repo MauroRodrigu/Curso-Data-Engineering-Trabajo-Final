@@ -132,18 +132,28 @@ def enviar_email():
     parser = ConfigParser()
     parser.read('credenciales/credenciales.ini')
     config = parser['e-mail']
-    sender = config['sender']
-    recipients = config['recipients']
-    password = config['password']
     
     msg = MIMEText('texto')
-    msg['Subject'] = config['subject']
-    msg['From'] = config['from']
-    msg['To'] = ', '.join(config['recipients'])
-    with smtplib.SMTP_SSL('smtp.gmail.com', 456) as smtp_server:
-        smtp_server.login(sender, password)
-        smtp_server.sendmail(sender, recipients, msg.as_string())
+    msg['Subject'] = 'Título del mail'
+    msg['From'] = config['from_user']
+    msg['To'] = config['to_user']
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp_server:
+        smtp_server.login(config['from_user'], config['password'])
+        smtp_server.sendmail(config['from_user'], config['to_user'], msg.as_string())
     print('Mensaje enviado')
+
+# Con variables creadas en el webserver
+
+def enviar_email2(**context):
+    sender = context['var']['value'].get("EMAIL_SENDER_MJ")
+    recipients = [context['var']['value'].get('EMAIL_RECEIVER_MJ')] #lista por si hay varios destinatarios
+    password = context['var']['value'].get('EMAIL_PASSWORD_CODER') 
+#Los gets apuntan a los nombres de las variables creadas.
+
+Gestionar cuenta de google >> Seguridad >> contraseña de aplicación
+
+Podemos cambiar la sección de SMTP de airflow.cfg y loguear nuestro email. Luego podemos usar el siguiente operador donde solo hay que poner los destinatarios y el mensaje.
+from airflow.operators.email_operator import EmailOperator
     
 default_args = {'owner': 'Mauro Rodríguez',
                 'depends_on_past': True,
