@@ -48,7 +48,7 @@ def conexion_api(**context):
     data.to_csv('data/datos_bcra.csv', index= False)
     
     with open('data/mensaje.txt', 'w') as f:
-        f.write("- Conexión a la API exitosa.")
+        f.write("1. Conexión exitosa a la API.")
 
 def filtrar_registros():
 
@@ -66,7 +66,7 @@ def filtrar_registros():
         
         mensaje = """
 
-- No hay datos en redshift. Se insertarán los {} registros existentes de la API""".format(len(data))
+2. No hay datos en redshift. Se insertarán los {} registros existentes de la API""".format(len(data))
         
         with open('data/mensaje.txt', 'a') as f:
             f.write(mensaje)
@@ -84,7 +84,7 @@ def filtrar_registros():
             
             mensaje = """
 
-- Existen {} registro/s nuevo/s que será/n cargardo/s en redshift""".format(len(data))
+2. Existen {} registro/s nuevo/s que será/n cargardo/s en redshift""".format(len(data))
         
             with open('data/mensaje.txt', 'a') as f:
                 f.write(mensaje)
@@ -93,7 +93,7 @@ def filtrar_registros():
         else:
             mensaje = """
 
-- No hay registros nuevos para cargar en redshift."""
+2. No hay registros nuevos para cargar en redshift."""
         
             with open('data/mensaje.txt', 'a') as f:
                 f.write(mensaje)
@@ -117,7 +117,7 @@ def conn_redshift():
         
         mensaje = """
 
-- Carga exitosa en Redshift."""
+3. Carga exitosa en Redshift."""
         
         with open('data/mensaje.txt', 'a') as f:
             f.write(mensaje)
@@ -146,15 +146,10 @@ def enviar_email(**context):
         smtp_server.login(sender, password)
         smtp_server.sendmail(sender, receiver, msg.as_string())
     print('Mensaje enviado')
-
-# Gestionar cuenta de google >> Seguridad >> contraseña de aplicación
-
-#Podemos cambiar la sección de SMTP de airflow.cfg y loguear nuestro email. Luego podemos usar el siguiente operador donde solo hay que poner los destinatarios y el mensaje.
-# from airflow.operators.email_operator import EmailOperator
     
 default_args = {'owner': 'Mauro Rodríguez',
                 'depends_on_past': True,
-                'retries': 0,
+                'retries': 5,
                 'retry_delay':timedelta(minutes=1)}
     
 with DAG(dag_id = 'api_bcra',
