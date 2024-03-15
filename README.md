@@ -44,7 +44,7 @@ Y crear en el mismo directorio las siguientes carpetas:
 
 Dentro de la **carpeta dags** debe almacenarse los scripts de Python **dag_bcra.py**, **funciones.py** y el script sql **tabla_redshift.sql**, los cuales deben ser descargardos de este repositorio.
 
-Hay que tener en cuenta de que el archivo tabla_redshift.sql debe ser modificado previamente para indicarle el nombre del schema en donde se almacenará la tabla. Para ello, debemos cambiar el nombre "[schema]" que viene por defecto, por el que corresponda. Es importante no modificar solo el nombre del schema y no de la tabla. 
+Hay que tener en cuenta de que el archivo tabla_redshift.sql debe ser modificado previamente para indicarle el nombre del schema en donde se almacenará la tabla. Para ello, debemos cambiar el nombre "[schema]" que viene por defecto, por el que corresponda. Es importante modificar solo el nombre del schema y no de la tabla. 
 
 ![](imagenes/sql.png)
 
