@@ -10,7 +10,7 @@
 
 ## Descripción
 
-El siguiente script de Python nos permite ejecutar un DAG en Apache-Airflow, el cual ejecuta una descarga de datos diarios desde la API del Banco Central de la República Argentina (BCRA) referida a diversas variables monetarias de dicho país.
+El siguiente script de Python nos permite ejecutar un DAG en Apache-Airflow, el cual realiza una descarga de datos diarios desde la API del Banco Central de la República Argentina (BCRA) referida a diversas variables monetarias de dicho país.
 
 Concretamente, las tareas que realiza el DAG son las siguientes:
 
